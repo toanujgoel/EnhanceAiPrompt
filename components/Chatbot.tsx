@@ -62,13 +62,13 @@ const Chatbot: React.FC = () => {
       
       {/* Overlay for mobile */}
        <div 
-        className={`fixed inset-0 bg-black/40 z-40 transition-opacity sm:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+        className={`fixed inset-0 bg-black/40 z-60 transition-opacity sm:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
         onClick={() => setIsOpen(false)}
       ></div>
 
 
       {isOpen && (
-        <div className="fixed bottom-0 left-0 right-0 w-full h-[80vh] bg-white dark:bg-gray-800 rounded-t-2xl shadow-2xl flex flex-col transition-all border-t border-gray-200 dark:border-gray-700 z-40 sm:bottom-24 sm:left-auto sm:right-6 sm:w-full sm:max-w-sm sm:h-[60vh] sm:rounded-2xl sm:border">
+        <div className="fixed bottom-0 left-0 right-0 w-full h-[80vh] bg-white dark:bg-gray-800 rounded-t-2xl shadow-2xl flex flex-col transition-all border-t border-gray-200 dark:border-gray-700 z-60 sm:bottom-24 sm:left-auto sm:right-6 sm:w-full sm:max-w-sm sm:h-[60vh] sm:rounded-2xl sm:border">
           <header className="bg-primary-600 text-white p-4 rounded-t-2xl flex justify-between items-center flex-shrink-0">
             <h3 className="font-bold text-lg">AI Assistant</h3>
             <button onClick={() => setIsOpen(false)} aria-label="Close chat" className="p-1 rounded-full hover:bg-white/20">

@@ -19,6 +19,10 @@ export enum Tool {
   TTS = 'Text-to-Speech',
   TRANSCRIBER = 'Record Thoughts',
   BLOG = 'Blog',
+  ABOUT = 'About',
+  CONTACT = 'Contact',
+  PRIVACY = 'Privacy Policy',
+  TERMS = 'Terms of Service',
 }
 
 export interface ChatMessage {
