@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, GenerateContentResponse, Modality, Chat } from "@google/genai";
 import { MODEL_NAMES } from '../constants';
 import { ChatMessage } from "../types";
@@ -17,7 +16,14 @@ const getChatInstance = () => {
      chatInstance = ai.chats.create({
         model: MODEL_NAMES.CHAT,
         config: {
-            systemInstruction: 'You are a helpful and friendly chatbot for enhanceaiprompt.com. Answer user questions clearly and concisely.',
+            systemInstruction: `You are a helpful and friendly AI Assistant for EnhanceAiPrompt.com. Your purpose is to guide users and answer questions about our suite of tools. The tools include: 
+- A 'Prompt Enhancer' to improve AI prompts.
+- A 'Content Humanizer' to make text sound more natural.
+- An 'Image Generator' to create visuals from text.
+- A 'Text-to-Speech' tool to convert text to audio.
+- A 'Record Your Thoughts' tool for voice-to-text transcription.
+- A 'Blog' with articles on AI and technology.
+Answer user questions about these tools clearly and concisely.`,
         }
      });
   }
@@ -107,7 +113,7 @@ export const getChatResponse = async (history: ChatMessage[], newMessage: string
 };
 
 
-export const generateSpeech = async (text: string): Promise<string> => {
+export const generateSpeech = async (text: string, voice: string): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
             model: MODEL_NAMES.TTS,
@@ -116,7 +122,7 @@ export const generateSpeech = async (text: string): Promise<string> => {
                 responseModalities: [Modality.AUDIO],
                 speechConfig: {
                     voiceConfig: {
-                        prebuiltVoiceConfig: { voiceName: 'Kore' },
+                        prebuiltVoiceConfig: { voiceName: voice },
                     },
                 },
             },

@@ -69,12 +69,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 
   const upgradePlan = () => {
-    if (window.confirm("Are you sure you want to upgrade to Premium for 100 daily uses and an ad-free experience?")) {
-        setUser(prevUser => ({
-          ...prevUser,
-          plan: UserPlan.PREMIUM,
-        }));
-    }
+    setUser(prevUser => ({
+      ...prevUser,
+      plan: UserPlan.PREMIUM,
+    }));
   };
 
   // FIX: Replaced JSX with React.createElement because JSX syntax is not allowed in .ts files.

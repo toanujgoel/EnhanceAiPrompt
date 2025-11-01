@@ -1,4 +1,3 @@
-
 export enum UserPlan {
   FREE = 'FREE',
   PREMIUM = 'PREMIUM',
@@ -18,7 +17,8 @@ export enum Tool {
   HUMANIZER = 'Content Humanizer',
   IMAGE_GENERATOR = 'Image Generator',
   TTS = 'Text-to-Speech',
-  TRANSCRIBER = 'Audio Transcriber',
+  TRANSCRIBER = 'Record Thoughts',
+  BLOG = 'Blog',
 }
 
 export interface ChatMessage {

@@ -1,10 +1,9 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { generateSpeech } from '../services/geminiService';
 import AdBanner from './AdBanner';
 import { useUser } from '../hooks/useUser';
 import { UserPlan } from '../types';
-import { ArrowPathIcon, PlayIcon, SpeakerWaveIcon } from './icons/Icons';
+import { PlayIcon, SpeakerWaveIcon } from './icons/Icons';
 
 // Helper function to decode base64 string to Uint8Array
 const decode = (base64: string): Uint8Array => {
@@ -40,10 +39,27 @@ async function decodeAudioData(
 
 const TextToSpeech: React.FC = () => {
   const [text, setText] = useState('');
+  const [voice, setVoice] = useState<'Kore' | 'Puck'>('Kore'); // Kore=Female, Puck=Male
   const [isLoading, setIsLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const { user } = useUser();
+
+  useEffect(() => {
+    let intervalId: number | undefined;
+    if (isLoading) {
+      setTimer(0);
+      intervalId = window.setInterval(() => {
+        setTimer(prevTimer => prevTimer + 1);
+      }, 1000);
+    }
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isLoading]);
 
   const handleGenerateSpeech = async () => {
     if (!text) {
@@ -61,7 +77,7 @@ const TextToSpeech: React.FC = () => {
 
 
     try {
-      const base64Audio = await generateSpeech(text);
+      const base64Audio = await generateSpeech(text, voice);
       const decodedAudio = decode(base64Audio);
       const buffer = await decodeAudioData(decodedAudio, audioContext, 24000, 1);
       setAudioBuffer(buffer);
@@ -84,47 +100,63 @@ const TextToSpeech: React.FC = () => {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Text-to-Speech Tool</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">Convert text into high-quality, natural-sounding audio.</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-white tracking-tight">Text-to-Speech Tool</h1>
+        <p className="mt-3 max-w-2xl mx-auto text-base md:text-lg text-gray-600 dark:text-gray-400">Convert text into high-quality, natural-sounding audio.</p>
       </div>
 
       {user.plan === UserPlan.FREE && <AdBanner />}
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-        <label htmlFor="tts-input" className="block text-lg font-semibold mb-2">Your Text</label>
+      <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+        <label htmlFor="tts-input" className="block text-md sm:text-lg font-semibold mb-3">Your Text</label>
         <textarea
           id="tts-input"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Enter text to convert to speech..."
-          className="w-full h-32 p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+          className="w-full h-32 p-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-200"
           disabled={isLoading}
         />
-         <button
-          onClick={handleGenerateSpeech}
-          disabled={isLoading || !text}
-          className="mt-4 px-8 py-3 bg-primary-600 text-white font-semibold rounded-lg shadow-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-75 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300"
-        >
-          {isLoading ? 'Generating Audio...' : 'Generate Audio'}
-        </button>
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div role="radiogroup" className="flex items-center justify-center space-x-2 sm:space-x-4">
+                <label className="cursor-pointer">
+                    <input type="radio" name="voice" value="Kore" checked={voice === 'Kore'} onChange={() => setVoice('Kore')} className="sr-only peer" />
+                    <div className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 peer-checked:bg-pink-500 peer-checked:text-white transition-colors duration-200">
+                    Female
+                    </div>
+                </label>
+                <label className="cursor-pointer">
+                    <input type="radio" name="voice" value="Puck" checked={voice === 'Puck'} onChange={() => setVoice('Puck')} className="sr-only peer" />
+                    <div className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 peer-checked:bg-blue-500 peer-checked:text-white transition-colors duration-200">
+                    Male
+                    </div>
+                </label>
+            </div>
+            <button
+            onClick={handleGenerateSpeech}
+            disabled={isLoading || !text}
+            className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl shadow-md hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-75 disabled:bg-gray-400 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 transition-all"
+            >
+            {isLoading ? `Generating... (${timer}s)` : 'Generate Audio'}
+            </button>
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg min-h-[100px] flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg min-h-[120px] flex items-center justify-center border border-gray-200 dark:border-gray-700">
         {isLoading ? (
-          <div className="text-center">
-            <ArrowPathIcon className="animate-spin mx-auto" />
-            <p className="mt-2">Generating audio...</p>
-          </div>
+            <div className="flex items-center space-x-3">
+                <SpeakerWaveIcon className="w-8 h-8 text-primary-500 animate-pulse" />
+                <span className="font-semibold">Generating audio... ({timer}s)</span>
+            </div>
         ) : audioBuffer ? (
-            <button onClick={playAudio} className="flex items-center px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors">
+            <button onClick={playAudio} className="flex items-center px-8 py-3 bg-green-500 text-white font-semibold rounded-xl shadow-md hover:bg-green-600 transform hover:scale-105 active:scale-95 transition-all">
                 <PlayIcon />
                 <span className="ml-2">Play Audio</span>
             </button>
         ) : (
           <div className="text-center text-gray-500 dark:text-gray-400">
-            <SpeakerWaveIcon className="mx-auto" />
+            <SpeakerWaveIcon className="mx-auto w-12 h-12 text-gray-300 dark:text-gray-600" />
             <p className="mt-2">Your generated audio will be playable here.</p>
           </div>
         )}
