@@ -12,14 +12,14 @@ const Blog: React.FC = () => {
       {/* Hero Section */}
       <div className="relative rounded-2xl overflow-hidden shadow-lg h-80">
           <img 
-              src="https://images.unsplash.com/photo-1620712943543-aebc6923297f?q=80&w=1770&auto=format&fit=crop" 
-              alt="AI and Technology" 
+              src="https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+              alt="AI Technology and Innovation" 
               className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
           <div className="relative h-full flex flex-col justify-end p-6 sm:p-10 text-white">
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-shadow-lg">Tech & AI Blog</h1>
-              <p className="mt-3 max-w-2xl text-lg md:text-xl text-shadow">Your daily dose of insights, tutorials, and news from the world of AI.</p>
+              <p className="mt-3 max-w-2xl text-lg md:text-xl text-shadow">Discover insights, tutorials, and the latest breakthroughs in artificial intelligence.</p>
           </div>
       </div>
 

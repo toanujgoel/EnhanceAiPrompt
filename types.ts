@@ -8,6 +8,9 @@ export interface User {
   usage: {
     enhance: number;
     humanize: number;
+    image: number;
+    speech: number;
+    transcribe: number;
     date: string; // YYYY-MM-DD
   };
 }

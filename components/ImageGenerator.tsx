@@ -10,7 +10,7 @@ const ImageGenerator: React.FC = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
-  const { user } = useUser();
+  const { user, incrementUsage } = useUser();
 
   useEffect(() => {
     let intervalId: number | undefined;
@@ -32,6 +32,14 @@ const ImageGenerator: React.FC = () => {
       alert('Please enter a prompt to generate an image.');
       return;
     }
+
+    // Check usage limits for free users
+    if (user.plan === UserPlan.FREE) {
+      if (!incrementUsage('image')) {
+        return; // Usage limit reached, incrementUsage already shows alert
+      }
+    }
+
     setIsLoading(true);
     setImageUrl(null);
     try {

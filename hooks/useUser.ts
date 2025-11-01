@@ -6,7 +6,7 @@ import { USAGE_LIMITS } from '../constants';
 interface UserContextType {
   user: User;
   upgradePlan: () => void;
-  incrementUsage: (tool: 'enhance' | 'humanize') => boolean;
+  incrementUsage: (tool: 'enhance' | 'humanize' | 'image' | 'speech' | 'transcribe') => boolean;
   getRemainingUses: () => number;
 }
 
@@ -20,6 +20,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     usage: {
       enhance: 0,
       humanize: 0,
+      image: 0,
+      speech: 0,
+      transcribe: 0,
       date: getTodayDateString(),
     },
   });
@@ -29,9 +32,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (user.usage.date !== today) {
       setUser(prevUser => ({
         ...prevUser,
-        usage: { enhance: 0, humanize: 0, date: today },
+        usage: { enhance: 0, humanize: 0, image: 0, speech: 0, transcribe: 0, date: today },
       }));
-      return { enhance: 0, humanize: 0 };
+      return { enhance: 0, humanize: 0, image: 0, speech: 0, transcribe: 0 };
     }
     return user.usage;
   }, [user.usage]);
@@ -40,12 +43,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const getRemainingUses = useCallback(() => {
     const currentUsage = checkAndResetUsage();
     const limit = USAGE_LIMITS[user.plan];
-    const totalUsed = currentUsage.enhance + currentUsage.humanize;
+    const totalUsed = currentUsage.enhance + currentUsage.humanize + currentUsage.image + currentUsage.speech + currentUsage.transcribe;
     return Math.max(0, limit - totalUsed);
   }, [user.plan, checkAndResetUsage]);
 
 
-  const incrementUsage = useCallback((tool: 'enhance' | 'humanize'): boolean => {
+  const incrementUsage = useCallback((tool: 'enhance' | 'humanize' | 'image' | 'speech' | 'transcribe'): boolean => {
     const remaining = getRemainingUses();
     if (remaining <= 0) {
       alert(`You have reached your daily limit of ${USAGE_LIMITS[user.plan]} uses.`);
@@ -55,7 +58,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(prevUser => {
         const today = getTodayDateString();
         // Double check for date reset inside the setter to handle state updates
-        const usage = prevUser.usage.date === today ? prevUser.usage : { enhance: 0, humanize: 0, date: today };
+        const usage = prevUser.usage.date === today ? prevUser.usage : { enhance: 0, humanize: 0, image: 0, speech: 0, transcribe: 0, date: today };
         return {
             ...prevUser,
             usage: {

@@ -2,7 +2,7 @@ import { GoogleGenAI, GenerateContentResponse, Modality, Chat } from "@google/ge
 import { MODEL_NAMES } from '../constants';
 import { ChatMessage } from "../types";
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
   throw new Error("API_KEY environment variable not set");

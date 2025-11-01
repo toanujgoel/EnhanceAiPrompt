@@ -1,7 +1,7 @@
 import { UserPlan } from './types';
 
 export const USAGE_LIMITS = {
-  [UserPlan.FREE]: 2,
+  [UserPlan.FREE]: 5,
   [UserPlan.PREMIUM]: 100,
 };
 

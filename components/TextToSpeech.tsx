@@ -44,7 +44,7 @@ const TextToSpeech: React.FC = () => {
   const [timer, setTimer] = useState(0);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const { user } = useUser();
+  const { user, incrementUsage } = useUser();
 
   useEffect(() => {
     let intervalId: number | undefined;
@@ -65,6 +65,13 @@ const TextToSpeech: React.FC = () => {
     if (!text) {
       alert('Please enter text to generate speech.');
       return;
+    }
+
+    // Check usage limits for free users
+    if (user.plan === UserPlan.FREE) {
+      if (!incrementUsage('speech')) {
+        return; // Usage limit reached, incrementUsage already shows alert
+      }
     }
     
     setIsLoading(true);

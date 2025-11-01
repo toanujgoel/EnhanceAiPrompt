@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, LiveSession, Modality, Blob, LiveServerMessage } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { MODEL_NAMES } from '../constants';
 import AdBanner from './AdBanner';
 import { useUser } from '../hooks/useUser';
 import { UserPlan } from '../types';
 import { MicrophoneIcon, StopCircleIcon } from './icons/Icons';
 
-// Helper to encode Uint8Array to base64
-function encode(bytes: Uint8Array): string {
+// Helper to convert audio buffer to base64
+function audioBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
     let binary = '';
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
+    for (let i = 0; i < bytes.byteLength; i++) {
         binary += String.fromCharCode(bytes[i]);
     }
     return btoa(binary);
@@ -20,133 +20,145 @@ const AudioTranscriber: React.FC = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [transcription, setTranscription] = useState('');
     const [error, setError] = useState<string | null>(null);
-    const { user } = useUser();
+    const [isTranscribing, setIsTranscribing] = useState(false);
+    const [timer, setTimer] = useState(0);
+    const { user, incrementUsage } = useUser();
 
-    const sessionPromiseRef = useRef<Promise<LiveSession> | null>(null);
-    const audioContextRef = useRef<AudioContext | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const mediaStreamRef = useRef<MediaStream | null>(null);
-    const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
-    const fullTranscriptionRef = useRef('');
+    const chunksRef = useRef<Blob[]>([]);
 
-    // Make stopRecording idempotent and safe to call multiple times
+    // Timer effect for transcription loading
+    useEffect(() => {
+        let intervalId: number | undefined;
+        if (isTranscribing) {
+            setTimer(0);
+            intervalId = window.setInterval(() => {
+                setTimer(prevTimer => prevTimer + 1);
+            }, 1000);
+        }
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [isTranscribing]);
+
     const stopRecording = () => {
         setIsRecording(false);
-        if (sessionPromiseRef.current) {
-            sessionPromiseRef.current.then(session => session.close()).catch(console.error);
-            sessionPromiseRef.current = null;
+        
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
         }
+        
         if (mediaStreamRef.current) {
             mediaStreamRef.current.getTracks().forEach(track => track.stop());
             mediaStreamRef.current = null;
         }
-        if (scriptProcessorRef.current) {
-            try {
-                scriptProcessorRef.current.disconnect();
-            } catch (e) {
-                // Can ignore disconnection errors if context is already closed
-            }
-            scriptProcessorRef.current = null;
-        }
-        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-            audioContextRef.current.close().catch(console.error);
-        }
-        audioContextRef.current = null;
     };
 
+    const transcribeAudio = async (audioBlob: Blob) => {
+        try {
+            // Check usage limits for free users
+            if (user.plan === UserPlan.FREE) {
+                if (!incrementUsage('transcribe')) {
+                    setError(`You have reached your daily limit of 5 uses. Upgrade to Pro for unlimited access.`);
+                    setIsTranscribing(false); // Reset loading state
+                    return;
+                }
+            }
+
+            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
+            
+            // Convert blob to base64
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const base64Audio = audioBufferToBase64(arrayBuffer);
+            
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{
+                    parts: [{
+                        inlineData: {
+                            data: base64Audio,
+                            mimeType: audioBlob.type
+                        }
+                    }, {
+                        text: "Please transcribe this audio recording into text. Only return the transcribed text, nothing else."
+                    }]
+                }]
+            });
+
+            const transcribedText = response.text.trim();
+            setTranscription(prev => prev + (prev ? ' ' : '') + transcribedText);
+            
+        } catch (err: any) {
+            console.error('Transcription error:', err);
+            setError('Failed to transcribe audio. Please try again.');
+        } finally {
+            setIsTranscribing(false); // Stop loading state
+        }
+    };
 
     const startRecording = async () => {
-        // First, ensure any previous session is fully stopped.
-        stopRecording();
-        
-        setIsRecording(true);
-        setTranscription('');
-        fullTranscriptionRef.current = '';
         setError(null);
+        setTranscription('');
+        setIsTranscribing(false);
+        chunksRef.current = [];
 
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error('Your browser does not support the Media Devices API.');
+                throw new Error('Media recording not supported in this browser');
             }
+
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 44100
+                } 
+            });
             
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaStreamRef.current = stream;
 
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-            audioContextRef.current = audioContext;
-            
-            let currentTranscription = '';
-
-            sessionPromiseRef.current = ai.live.connect({
-                model: MODEL_NAMES.AUDIO_TRANSCRIPTION,
-                callbacks: {
-                    onopen: () => { console.log('Live session opened.');},
-                    onmessage: (message: LiveServerMessage) => {
-                        const transcriptPart = message.serverContent?.inputTranscription;
-                        if (transcriptPart) {
-                           if (transcriptPart.isFinal) {
-                               fullTranscriptionRef.current += transcriptPart.text;
-                               currentTranscription = '';
-                           } else {
-                               currentTranscription = transcriptPart.text;
-                           }
-                           setTranscription(fullTranscriptionRef.current + currentTranscription);
-                        }
-                    },
-                    onerror: (e: any) => {
-                        console.error('Live session error:', e);
-                        setError('An API error occurred during transcription. Please try again.');
-                        stopRecording();
-                    },
-                    onclose: () => { 
-                        console.log('Live session closed.');
-                        // Let stopRecording handle state, don't call it recursively
-                        setIsRecording(false); 
-                     }
-                },
-                config: {
-                    inputAudioTranscription: { enableAutomaticPunctuation: true },
-                    responseModalities: [] 
-                }
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
             });
+            
+            mediaRecorderRef.current = mediaRecorder;
 
-            const source = audioContext.createMediaStreamSource(stream);
-            const scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-            scriptProcessorRef.current = scriptProcessor;
-
-            scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-                const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                const l = inputData.length;
-                const int16 = new Int16Array(l);
-                for (let i = 0; i < l; i++) {
-                    int16[i] = inputData[i] * 32768;
-                }
-                const pcmBlob: Blob = {
-                    data: encode(new Uint8Array(int16.buffer)),
-                    mimeType: 'audio/pcm;rate=16000',
-                };
-                
-                if (sessionPromiseRef.current) {
-                  sessionPromiseRef.current.then((session) => {
-                      session.sendRealtimeInput({ media: pcmBlob });
-                  }).catch(err => {
-                      console.error("Failed to send audio data:", err);
-                      setError("Connection lost. Please restart recording.");
-                      stopRecording();
-                  });
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    chunksRef.current.push(event.data);
                 }
             };
-            source.connect(scriptProcessor);
-            scriptProcessor.connect(audioContext.destination);
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
+                setIsTranscribing(true); // Start loading state for transcription
+                transcribeAudio(audioBlob);
+            };
+
+            mediaRecorder.onerror = (event) => {
+                console.error('MediaRecorder error:', event);
+                setError('Recording failed. Please try again.');
+                setIsRecording(false);
+                setIsTranscribing(false);
+            };
+
+            mediaRecorder.start(1000); // Record in 1-second chunks
+            setIsRecording(true);
 
         } catch (err: any) {
             console.error('Failed to start recording:', err);
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                setError('Microphone access was denied. Please allow microphone permissions in your browser settings.');
+                setError('Microphone access denied. Please allow microphone permissions and try again.');
+            } else if (err.name === 'NotFoundError') {
+                setError('No microphone found. Please connect a microphone and try again.');
             } else {
-                setError('Could not access microphone. Please ensure it is connected and enabled.');
+                setError('Could not start recording. Please check your microphone and try again.');
             }
             setIsRecording(false);
+            setIsTranscribing(false);
         }
     };
     
@@ -155,7 +167,7 @@ const AudioTranscriber: React.FC = () => {
         return () => {
             stopRecording();
         };
-    },[]);
+    }, []);
 
     return (
         <div className="space-y-6 md:space-y-8">
@@ -169,14 +181,31 @@ const AudioTranscriber: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 text-center">
                 <button
                     onClick={isRecording ? stopRecording : startRecording}
+                    disabled={isTranscribing}
                     className={`flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 rounded-full text-white transition-all duration-300 mx-auto
-                        ${isRecording ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-primary-600 hover:bg-primary-700'}`}
-                    aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                        ${isTranscribing 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : isRecording 
+                            ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                            : 'bg-primary-600 hover:bg-primary-700'
+                        }`}
+                    aria-label={isTranscribing ? 'Transcribing...' : isRecording ? 'Stop recording' : 'Start recording'}
                 >
-                    {isRecording ? <StopCircleIcon /> : <MicrophoneIcon />}
+                    {isTranscribing ? (
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                    ) : isRecording ? (
+                        <StopCircleIcon />
+                    ) : (
+                        <MicrophoneIcon />
+                    )}
                 </button>
                 <p className="mt-6 text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">
-                    {isRecording ? 'Recording in progress...' : 'Press the button to start recording'}
+                    {isTranscribing 
+                        ? 'Transcribing your audio...' 
+                        : isRecording 
+                        ? 'Recording... Click to stop and transcribe' 
+                        : 'Press the button to start recording'
+                    }
                 </p>
             </div>
 
@@ -184,7 +213,18 @@ const AudioTranscriber: React.FC = () => {
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800 dark:text-white">Your Thoughts in Text</h2>
                 <div className="w-full h-full p-4 bg-gray-50 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-700 rounded-xl overflow-y-auto min-h-[200px]">
                     {error && <p className="text-red-500 font-medium">{error}</p>}
-                    <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">{transcription || 'Your transcribed thoughts will appear here in real-time...'}</p>
+                    {isTranscribing ? (
+                        <div className="flex flex-col items-center justify-center h-full">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
+                            <p className="text-gray-600 dark:text-gray-400 font-medium">
+                                Transcribing your audio... {timer}s
+                            </p>
+                        </div>
+                    ) : (
+                        <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                            {transcription || 'Your transcribed thoughts will appear here in real-time...'}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

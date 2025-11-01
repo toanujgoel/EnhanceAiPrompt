@@ -75,7 +75,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) => {
                   {/* Premium Plan */}
                   <div className="border-2 border-primary-500 rounded-lg p-4 bg-primary-50 dark:bg-primary-900/20">
                       <h3 className="text-lg font-semibold text-primary-600 dark:text-primary-400">Premium</h3>
-                      <p className="text-2xl font-bold my-2">$10/mo</p>
+                      <p className="text-2xl font-bold my-2">$12/mo</p>
                       <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-300">
                           <li>{USAGE_LIMITS[UserPlan.PREMIUM]} daily uses</li>
                           <li>Ad-free experience</li>
