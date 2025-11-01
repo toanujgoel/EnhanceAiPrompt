@@ -1,0 +1,7 @@
+{
+  "name": "Enhance AI Prompt Suite",
+  "description": "A comprehensive suite of AI-powered tools including a prompt enhancer, content humanizer, image generator, audio transcriber, TTS, and an intelligent chatbot, all built with the Gemini API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
