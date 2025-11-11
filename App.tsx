@@ -5,7 +5,6 @@ import PromptEnhancer from './components/PromptEnhancer';
 import ContentHumanizer from './components/ContentHumanizer';
 import ImageGenerator from './components/ImageGenerator';
 import TextToSpeech from './components/TextToSpeech';
-import AudioTranscriber from './components/AudioTranscriber';
 import Blog from './components/Blog';
 import Chatbot from './components/Chatbot';
 import UpgradeModal from './components/UpgradeModal';
@@ -30,8 +29,6 @@ const App: React.FC = () => {
         return <ImageGenerator />;
       case Tool.TTS:
         return <TextToSpeech />;
-      case Tool.TRANSCRIBER:
-        return <AudioTranscriber />;
       case Tool.BLOG:
         return <Blog />;
       case Tool.ABOUT:

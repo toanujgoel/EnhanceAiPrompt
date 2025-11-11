@@ -15,7 +15,6 @@ const toolIcons: Record<Tool, React.ReactNode> = {
     [Tool.HUMANIZER]: <SparklesIcon />,
     [Tool.IMAGE_GENERATOR]: <PhotoIcon />,
     [Tool.TTS]: <SpeakerWaveIcon />,
-    [Tool.TRANSCRIBER]: <MicrophoneIcon className="w-5 h-5" />,
     [Tool.BLOG]: <NewspaperIcon className="w-5 h-5" />,
     [Tool.ABOUT]: <InformationCircleIcon />,
     [Tool.CONTACT]: <EnvelopeIcon />,
@@ -23,7 +22,7 @@ const toolIcons: Record<Tool, React.ReactNode> = {
     [Tool.TERMS]: <DocumentTextIcon />,
 };
 
-const MAIN_TOOLS = [Tool.ENHANCER, Tool.HUMANIZER, Tool.IMAGE_GENERATOR, Tool.TTS, Tool.TRANSCRIBER, Tool.BLOG];
+const MAIN_TOOLS = [Tool.ENHANCER, Tool.HUMANIZER, Tool.IMAGE_GENERATOR, Tool.TTS, Tool.BLOG];
 const MORE_PAGES = [Tool.ABOUT, Tool.CONTACT, Tool.PRIVACY, Tool.TERMS];
 
 

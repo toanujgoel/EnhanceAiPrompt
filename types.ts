@@ -10,7 +10,6 @@ export interface User {
     humanize: number;
     image: number;
     speech: number;
-    transcribe: number;
     date: string; // YYYY-MM-DD
   };
 }
@@ -20,7 +19,6 @@ export enum Tool {
   HUMANIZER = 'Content Humanizer',
   IMAGE_GENERATOR = 'Image Generator',
   TTS = 'Text-to-Speech',
-  TRANSCRIBER = 'Record Thoughts',
   BLOG = 'Blog',
   ABOUT = 'About',
   CONTACT = 'Contact',
