@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page - EnhanceAI</title>
+</head>
+<body>
+    <h1>Test Page</h1>
+    <p>If you can see this, the upload worked!</p>
+    <p>Current time: <span id="time"></span></p>
+    
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+        console.log('Test page loaded successfully');
+        
+        // Check if main files exist
+        fetch('/assets/index-AZhDt1Pf.js')
+            .then(response => {
+                console.log('Main JS file status:', response.status);
+                if (!response.ok) {
+                    console.error('Main JS file not found!');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading main JS:', error);
+            });
+    </script>
+</body>
+</html>

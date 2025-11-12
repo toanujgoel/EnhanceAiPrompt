@@ -3,7 +3,7 @@ import { InstagramIcon, LinkedInIcon, XIcon } from './icons/Icons';
 
 const Contact: React.FC = () => {
     const socialLinks = [
-        { name: 'LinkedIn', href: 'https://linkedin.com/toanujgoel/', icon: <LinkedInIcon /> },
+        { name: 'LinkedIn', href: 'https://www.linkedin.com/in/toanujgoel/', icon: <LinkedInIcon /> },
         { name: 'X (Twitter)', href: 'https://x.com/Toanujgoel', icon: <XIcon /> },
         { name: 'Instagram', href: 'https://www.instagram.com/toanujgoel/', icon: <InstagramIcon /> },
     ];

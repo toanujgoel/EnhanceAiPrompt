@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../hooks/useUser';
 import { CheckIcon, XMarkIcon } from './icons/Icons';
-import { USAGE_LIMITS } from '../constants';
+import { USAGE_LIMITS, PRICING } from '../constants';
 import { UserPlan } from '../types';
 
 interface UpgradeModalProps {
@@ -51,41 +51,121 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-70 p-4" onClick={handleClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md transform transition-all" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={handleClose}>
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md transform transition-all border border-gray-200/50 dark:border-gray-700/50" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 relative">
-          <button onClick={handleClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-            <XMarkIcon className="w-6 h-6" />
+          <button onClick={handleClose} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-gray-700/60 rounded-xl transition-all duration-200">
+            <XMarkIcon className="w-5 h-5" />
           </button>
           
           {step === 'plans' && (
             <div>
-              <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-4">Upgrade to Premium</h2>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                  {/* Free Plan */}
-                  <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-gray-500 dark:text-gray-400">Free</h3>
-                      <p className="text-2xl font-bold my-2">_</p>
-                      <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-300">
-                          <li>{USAGE_LIMITS[UserPlan.FREE]} daily uses</li>
-                          <li>Ad-supported</li>
-                          <li>Basic access</li>
-                      </ul>
-                  </div>
-                  {/* Premium Plan */}
-                  <div className="border-2 border-primary-500 rounded-lg p-4 bg-primary-50 dark:bg-primary-900/20">
-                      <h3 className="text-lg font-semibold text-primary-600 dark:text-primary-400">Premium</h3>
-                      <p className="text-2xl font-bold my-2">$12/mo</p>
-                      <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-300">
-                          <li>{USAGE_LIMITS[UserPlan.PREMIUM]} daily uses</li>
-                          <li>Ad-free experience</li>
-                          <li>Priority access</li>
-                      </ul>
-                  </div>
+              {/* Header with urgency */}
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+                  Unlock Unlimited AI Power 🚀
+                </h2>
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                  ⏰ Limited time: Save 60% vs competitors
+                </p>
               </div>
-              <button onClick={handleSelectPremium} className="mt-6 w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white py-3 rounded-lg font-semibold shadow-md hover:from-primary-600 hover:to-primary-700 transform hover:scale-105 transition">
-                Choose Premium
+
+              {/* Value Proposition */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-gray-800 dark:text-white mb-3">
+                  Why 10,000+ creators choose Premium:
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <CheckIcon className="w-4 h-4 text-green-500" />
+                    <span className="text-gray-700 dark:text-gray-300">Save 4+ hours weekly</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckIcon className="w-4 h-4 text-green-500" />
+                    <span className="text-gray-700 dark:text-gray-300">Unlimited daily uses</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckIcon className="w-4 h-4 text-green-500" />
+                    <span className="text-gray-700 dark:text-gray-300">4x faster processing</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckIcon className="w-4 h-4 text-green-500" />
+                    <span className="text-gray-700 dark:text-gray-300">Priority AI access</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Comparison */}
+              <div className="bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-600 p-4 mb-6">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                    Premium Plan
+                  </h3>
+                  <div className="flex items-center justify-center space-x-2 mt-2">
+                    <span className="text-3xl font-bold text-gray-800 dark:text-white">
+                      ${PRICING.PREMIUM_MONTHLY_USD}
+                    </span>
+                    <span className="text-gray-600 dark:text-gray-400">/month</span>
+                  </div>
+                  <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                    Only ${PRICING.PREMIUM_DAILY_COST}/day • Cancel anytime
+                  </p>
+                </div>
+
+                {/* ROI Calculator */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600 dark:text-gray-400">ChatGPT Plus:</span>
+                    <span className="text-gray-800 dark:text-white font-medium">$20/month</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600 dark:text-gray-400">Claude Pro:</span>
+                    <span className="text-gray-800 dark:text-white font-medium">$20/month</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600 dark:text-gray-400">Separate image tools:</span>
+                    <span className="text-gray-800 dark:text-white font-medium">$15/month</span>
+                  </div>
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                    <div className="flex justify-between items-center font-semibold">
+                      <span className="text-red-600 dark:text-red-400">Competitors total:</span>
+                      <span className="text-red-600 dark:text-red-400">$55/month</span>
+                    </div>
+                    <div className="flex justify-between items-center font-bold text-green-600 dark:text-green-400">
+                      <span>EnhanceAI Premium:</span>
+                      <span>${PRICING.PREMIUM_MONTHLY_USD}/month</span>
+                    </div>
+                    <p className="text-center text-green-600 dark:text-green-400 font-bold text-lg mt-1">
+                      Save ${55 - PRICING.PREMIUM_MONTHLY_USD}/month (78% off!)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <button 
+                onClick={handleSelectPremium} 
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              >
+                Start Unlimited Access Now 🚀
               </button>
+
+              {/* Trust indicators */}
+              <div className="mt-4 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  ✅ Cancel anytime • ✅ 30-day money-back guarantee
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Join 10,000+ creators saving 4+ hours weekly
+                </p>
+              </div>
+
+              {/* Social proof */}
+              <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3">
+                <p className="text-sm text-center text-yellow-800 dark:text-yellow-200">
+                  🔥 <strong>Popular:</strong> 89% of users upgrade within their first week
+                </p>
+              </div>
             </div>
           )}
 

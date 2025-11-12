@@ -1,16 +1,19 @@
 export enum UserPlan {
-  FREE = 'FREE',
-  PREMIUM = 'PREMIUM',
+  ANONYMOUS = 'ANONYMOUS',    // No signup - 5 uses/day
+  FREE = 'FREE',              // Signed up - 10 lifetime bonus + 5 uses/day
+  PREMIUM = 'PREMIUM',        // $12/month - 100 uses/day
 }
 
 export interface User {
   plan: UserPlan;
+  email?: string;
+  signupDate?: string;
+  lifetimeBonus: number; // Bonus uses for signed up users
   usage: {
     enhance: number;
     humanize: number;
     image: number;
     speech: number;
-    transcribe: number;
     date: string; // YYYY-MM-DD
   };
 }
@@ -20,7 +23,6 @@ export enum Tool {
   HUMANIZER = 'Content Humanizer',
   IMAGE_GENERATOR = 'Image Generator',
   TTS = 'Text-to-Speech',
-  TRANSCRIBER = 'Record Thoughts',
   BLOG = 'Blog',
   ABOUT = 'About',
   CONTACT = 'Contact',

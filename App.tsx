@@ -5,10 +5,11 @@ import PromptEnhancer from './components/PromptEnhancer';
 import ContentHumanizer from './components/ContentHumanizer';
 import ImageGenerator from './components/ImageGenerator';
 import TextToSpeech from './components/TextToSpeech';
-import AudioTranscriber from './components/AudioTranscriber';
 import Blog from './components/Blog';
 import Chatbot from './components/Chatbot';
 import UpgradeModal from './components/UpgradeModal';
+import SignupModal from './components/SignupModal';
+import UsageIndicator from './components/UsageIndicator';
 import { Tool } from './types';
 import Footer from './components/Footer';
 import About from './components/About';
@@ -19,6 +20,7 @@ import Terms from './components/Terms';
 const App: React.FC = () => {
   const [activeTool, setActiveTool] = useState<Tool>(Tool.ENHANCER);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
 
   const renderTool = () => {
     switch (activeTool) {
@@ -30,8 +32,6 @@ const App: React.FC = () => {
         return <ImageGenerator />;
       case Tool.TTS:
         return <TextToSpeech />;
-      case Tool.TRANSCRIBER:
-        return <AudioTranscriber />;
       case Tool.BLOG:
         return <Blog />;
       case Tool.ABOUT:
@@ -49,15 +49,35 @@ const App: React.FC = () => {
 
   return (
     <UserProvider>
-      <div className="min-h-screen bg-transparent text-gray-900 dark:text-gray-100 font-sans flex flex-col">
-        <Header activeTool={activeTool} setActiveTool={setActiveTool} openUpgradeModal={() => setIsUpgradeModalOpen(true)} />
-        <main className="p-4 sm:p-6 md:p-8 flex-grow">
-          <div className="max-w-7xl mx-auto">
-            {renderTool()}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white font-sans flex flex-col">
+        <Header 
+          activeTool={activeTool} 
+          setActiveTool={setActiveTool} 
+          openUpgradeModal={() => setIsUpgradeModalOpen(true)}
+          openSignupModal={() => setIsSignupModalOpen(true)}
+        />
+        
+        <main className="flex-grow px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-8">
+          <div className="max-w-6xl mx-auto">
+            {/* Usage Indicator - Show on tool pages */}
+            {[Tool.ENHANCER, Tool.HUMANIZER, Tool.IMAGE_GENERATOR, Tool.TTS].includes(activeTool) && (
+              <div className="mb-4 md:mb-8">
+                <UsageIndicator 
+                  onUpgradeClick={() => setIsUpgradeModalOpen(true)}
+                  onSignupClick={() => setIsSignupModalOpen(true)}
+                />
+              </div>
+            )}
+            
+            <div className="animate-in fade-in-50 duration-300">
+              {renderTool()}
+            </div>
           </div>
         </main>
+        
         <Chatbot />
         <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} />
+        <SignupModal isOpen={isSignupModalOpen} onClose={() => setIsSignupModalOpen(false)} />
         <Footer setActivePage={setActiveTool} />
       </div>
     </UserProvider>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        textarea { height: 100px; resize: vertical; }
+        button { background: #007cba; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #005a8b; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .posts { margin-top: 30px; }
+        .post { border: 1px solid #ddd; margin-bottom: 20px; padding: 15px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Blog API Test - n8n Integration</h1>
+        
+        <h2>Test Adding a New Post (simulate n8n webhook)</h2>
+        <form id="addPostForm">
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select id="category" name="category" required>
+                    <option value="">Select Category</option>
+                    <option value="AI Prompts">AI Prompts</option>
+                    <option value="Future Tech">Future Tech</option>
+                    <option value="Content Strategy">Content Strategy</option>
+                    <option value="Visual AI">Visual AI</option>
+                    <option value="Audio AI">Audio AI</option>
+                    <option value="Conversational AI">Conversational AI</option>
+                    <option value="AI Tools">AI Tools</option>
+                    <option value="Machine Learning">Machine Learning</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="excerpt">Excerpt:</label>
+                <textarea id="excerpt" name="excerpt" required placeholder="Brief description of the post..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="content">Content:</label>
+                <textarea id="content" name="content" required placeholder="Full content of the post..." style="height: 200px;"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="imageUrl">Image URL (optional):</label>
+                <input type="url" id="imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg">
+            </div>
+            
+            <div class="form-group">
+                <label for="authorName">Author Name:</label>
+                <input type="text" id="authorName" name="authorName" value="AI Writer" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="authorImage">Author Image URL (optional):</label>
+                <input type="url" id="authorImage" name="authorImage" placeholder="https://example.com/author.jpg">
+            </div>
+            
+            <button type="submit">Add Blog Post</button>
+        </form>
+        
+        <div id="result"></div>
+        
+        <h2>Current Dynamic Posts</h2>
+        <button onclick="loadPosts()">Refresh Posts</button>
+        <div id="posts"></div>
+    </div>
+
+    <script>
+        const API_URL = 'blog-api.php';
+        
+        document.getElementById('addPostForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const postData = {
+                title: formData.get('title'),
+                category: formData.get('category'),
+                excerpt: formData.get('excerpt'),
+                content: formData.get('content'),
+                imageUrl: formData.get('imageUrl'),
+                author: {
+                    name: formData.get('authorName'),
+                    imageUrl: formData.get('authorImage')
+                }
+            };
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(postData)
+                });
+                
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('result');
+                if (result.success) {
+                    resultDiv.innerHTML = `<div class="result success">
+                        <strong>Success!</strong> Blog post created with ID: ${result.post.id}
+                        <br><strong>Title:</strong> ${result.post.title}
+                        <br><strong>Date:</strong> ${result.post.date}
+                    </div>`;
+                    document.getElementById('addPostForm').reset();
+                    loadPosts(); // Refresh the posts list
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">
+                        <strong>Error:</strong> ${result.error}
+                    </div>`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<div class="result error">
+                    <strong>Network Error:</strong> ${error.message}
+                </div>`;
+            }
+        });
+        
+        async function loadPosts() {
+            try {
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                
+                const postsDiv = document.getElementById('posts');
+                if (result.success && result.posts.length > 0) {
+                    const postsHtml = result.posts.map(post => `
+                        <div class="post">
+                            <h3>${post.title}</h3>
+                            <p><strong>Category:</strong> ${post.category} | <strong>Date:</strong> ${post.date}</p>
+                            <p><strong>Author:</strong> ${post.author.name}</p>
+                            <p><strong>Excerpt:</strong> ${post.excerpt}</p>
+                            ${post.source ? `<p><strong>Source:</strong> ${post.source}</p>` : ''}
+                        </div>
+                    `).join('');
+                    postsDiv.innerHTML = postsHtml;
+                } else {
+                    postsDiv.innerHTML = '<p>No dynamic posts found.</p>';
+                }
+            } catch (error) {
+                document.getElementById('posts').innerHTML = `<p>Error loading posts: ${error.message}</p>`;
+            }
+        }
+        
+        // Load posts on page load
+        loadPosts();
+    </script>
+</body>
+</html>
