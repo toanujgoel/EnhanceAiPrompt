@@ -1,10 +1,14 @@
 export enum UserPlan {
-  FREE = 'FREE',
-  PREMIUM = 'PREMIUM',
+  ANONYMOUS = 'ANONYMOUS',    // No signup - 5 uses/day
+  FREE = 'FREE',              // Signed up - 10 lifetime bonus + 5 uses/day
+  PREMIUM = 'PREMIUM',        // $12/month - 100 uses/day
 }
 
 export interface User {
   plan: UserPlan;
+  email?: string;
+  signupDate?: string;
+  lifetimeBonus: number; // Bonus uses for signed up users
   usage: {
     enhance: number;
     humanize: number;

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Limiting Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #005a8b; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { background: #f5f5f5; border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 4px; white-space: pre-wrap; }
+        .error { background: #ffe6e6; border-color: #ff9999; }
+        .success { background: #e6ffe6; border-color: #99ff99; }
+        .status { background: #e6f3ff; border-color: #99ccff; }
+    </style>
+</head>
+<body>
+    <h1>Rate Limiting System Test</h1>
+    
+    <div class="controls">
+        <button onclick="checkStatus()">Check Current Status</button>
+        <button onclick="testUsage('enhance')">Test Enhance Tool</button>
+        <button onclick="testUsage('humanize')">Test Humanize Tool</button>
+        <button onclick="testUsage('image')">Test Image Tool</button>
+        <button onclick="testUsage('speech')">Test Speech Tool</button>
+        <button onclick="testMultiple()">Test 10 Rapid Requests</button>
+        <label>
+            <input type="checkbox" id="premiumMode"> Premium User Mode
+        </label>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_URL = '/api/rate-limit.php'; // Adjust for your setup
+        
+        async function checkStatus() {
+            try {
+                const userPlan = document.getElementById('premiumMode').checked ? 'PREMIUM' : 'FREE';
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'X-User-Plan': userPlan
+                    }
+                });
+                
+                const data = await response.json();
+                addResult(`Status Check:\n${JSON.stringify(data, null, 2)}`, 'status');
+            } catch (error) {
+                addResult(`Error checking status: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testUsage(tool) {
+            try {
+                const userPlan = document.getElementById('premiumMode').checked ? 'PREMIUM' : 'FREE';
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Plan': userPlan
+                    },
+                    body: JSON.stringify({ tool })
+                });
+                
+                const data = await response.json();
+                const resultClass = response.ok ? 'success' : 'error';
+                addResult(`${tool.toUpperCase()} Tool Test:\nStatus: ${response.status}\n${JSON.stringify(data, null, 2)}`, resultClass);
+            } catch (error) {
+                addResult(`Error testing ${tool}: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testMultiple() {
+            addResult("Testing 10 rapid requests...", 'status');
+            
+            for (let i = 1; i <= 10; i++) {
+                try {
+                    const userPlan = document.getElementById('premiumMode').checked ? 'PREMIUM' : 'FREE';
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-User-Plan': userPlan
+                        },
+                        body: JSON.stringify({ tool: 'test' })
+                    });
+                    
+                    const data = await response.json();
+                    const resultClass = response.ok ? 'success' : 'error';
+                    addResult(`Request ${i}: ${response.status} - ${data.success ? `Usage: ${data.usage}/${data.limit}` : data.error}`, resultClass);
+                    
+                    // Small delay to prevent overwhelming the server
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                } catch (error) {
+                    addResult(`Request ${i} failed: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        function addResult(text, className = '') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${className}`;
+            resultDiv.textContent = text;
+            resultsDiv.insertBefore(resultDiv, resultsDiv.firstChild);
+        }
+        
+        // Clear results on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkStatus();
+        });
+    </script>
+</body>
+</html>

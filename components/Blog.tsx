@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { blogPosts } from '../data/blogPosts';
 import AdBanner from './AdBanner';
+import EnhancedLoading from './EnhancedLoading';
 import { useUser } from '../hooks/useUser';
 import { UserPlan } from '../types';
 
@@ -89,9 +90,11 @@ const Blog: React.FC = () => {
       
       {/* Loading State */}
       {loading && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading latest posts...</span>
+        <div className="py-12">
+          <EnhancedLoading 
+            message="Loading latest posts..." 
+            context="blog"
+          />
         </div>
       )}
 

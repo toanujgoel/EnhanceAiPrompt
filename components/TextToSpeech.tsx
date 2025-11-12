@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateSpeech } from '../services/geminiService';
 import AdBanner from './AdBanner';
+import EnhancedLoading from './EnhancedLoading';
 import { useUser } from '../hooks/useUser';
 import { UserPlan } from '../types';
 import { PlayIcon, SpeakerWaveIcon } from './icons/Icons';
@@ -44,7 +45,7 @@ const TextToSpeech: React.FC = () => {
   const [timer, setTimer] = useState(0);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const { user, incrementUsage } = useUser();
+  const { user, validateAndIncrementUsage } = useUser();
 
   useEffect(() => {
     let intervalId: number | undefined;
@@ -67,12 +68,9 @@ const TextToSpeech: React.FC = () => {
       return;
     }
 
-    // Check usage limits for free users
-    if (user.plan === UserPlan.FREE) {
-      if (!incrementUsage('speech')) {
-        return; // Usage limit reached, incrementUsage already shows alert
-      }
-    }
+    // Server-side validation and usage increment
+    const canProceed = await validateAndIncrementUsage('speech');
+    if (!canProceed) return;
     
     setIsLoading(true);
     setAudioBuffer(null);
@@ -108,21 +106,27 @@ const TextToSpeech: React.FC = () => {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div className="text-center">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-white tracking-tight">Text-to-Speech Tool</h1>
-        <p className="mt-3 max-w-2xl mx-auto text-base md:text-lg text-gray-600 dark:text-gray-400">Convert text into high-quality, natural-sounding audio.</p>
+      <div className="text-center px-4">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">
+          Text-to-Speech
+        </h1>
+        <p className="max-w-2xl mx-auto text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+          Convert your text into high-quality, natural-sounding audio with AI voices
+        </p>
       </div>
 
       {user.plan === UserPlan.FREE && <AdBanner />}
 
-      <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
-        <label htmlFor="tts-input" className="block text-md sm:text-lg font-semibold mb-3">Your Text</label>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200/50 dark:border-gray-700/50">
+        <label htmlFor="tts-input" className="block text-sm font-semibold mb-3 text-gray-900 dark:text-white">
+          Your Text
+        </label>
         <textarea
           id="tts-input"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Enter text to convert to speech..."
-          className="w-full h-32 p-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-200"
+          placeholder="Enter the text you want to convert to speech..."
+          className="w-full h-32 p-4 bg-gray-50/80 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 resize-none text-sm md:text-base placeholder:text-gray-400 dark:placeholder:text-gray-500"
           disabled={isLoading}
         />
         <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -152,10 +156,11 @@ const TextToSpeech: React.FC = () => {
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg min-h-[120px] flex items-center justify-center border border-gray-200 dark:border-gray-700">
         {isLoading ? (
-            <div className="flex items-center space-x-3">
-                <SpeakerWaveIcon className="w-8 h-8 text-primary-500 animate-pulse" />
-                <span className="font-semibold">Generating audio... ({timer}s)</span>
-            </div>
+            <EnhancedLoading 
+              context="speech" 
+              timer={timer}
+              message="Converting text to speech"
+            />
         ) : audioBuffer ? (
             <button onClick={playAudio} className="flex items-center px-8 py-3 bg-green-500 text-white font-semibold rounded-xl shadow-md hover:bg-green-600 transform hover:scale-105 active:scale-95 transition-all">
                 <PlayIcon />

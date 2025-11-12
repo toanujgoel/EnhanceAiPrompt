@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Development Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .section { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .status { background: #e6f3ff; }
+        .success { background: #e6ffe6; }
+        .error { background: #ffe6e6; }
+        button { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #005a8b; }
+    </style>
+</head>
+<body>
+    <h1>Local Development Usage Test</h1>
+    
+    <div class="section status">
+        <h3>Current Development Usage Status:</h3>
+        <div id="status">Loading...</div>
+        <button onclick="checkLocalUsage()">Refresh Status</button>
+        <button onclick="clearLocalUsage()">Reset Usage (Dev Only)</button>
+    </div>
+    
+    <div class="section">
+        <h3>Test Usage Simulation:</h3>
+        <button onclick="simulateUsage('enhance')">Test Enhance</button>
+        <button onclick="simulateUsage('humanize')">Test Humanize</button>
+        <button onclick="simulateUsage('image')">Test Image</button>
+        <button onclick="simulateUsage('speech')">Test Speech</button>
+    </div>
+    
+    <div class="section">
+        <h3>Test Results:</h3>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function getTodayDateString() {
+            return new Date().toISOString().split('T')[0];
+        }
+        
+        function checkLocalUsage() {
+            const localUsage = localStorage.getItem('dev_usage');
+            const usage = localUsage ? JSON.parse(localUsage) : { count: 0, date: getTodayDateString() };
+            
+            // Reset if new day
+            if (usage.date !== getTodayDateString()) {
+                usage.count = 0;
+                usage.date = getTodayDateString();
+                localStorage.setItem('dev_usage', JSON.stringify(usage));
+            }
+            
+            const limit = 5; // Free user limit
+            const remaining = Math.max(0, limit - usage.count);
+            
+            document.getElementById('status').innerHTML = `
+                <strong>Usage:</strong> ${usage.count}/${limit}<br>
+                <strong>Remaining:</strong> ${remaining}<br>
+                <strong>Date:</strong> ${usage.date}<br>
+                <strong>Status:</strong> ${remaining > 0 ? 'Can use tools' : 'Daily limit reached'}
+            `;
+        }
+        
+        function clearLocalUsage() {
+            localStorage.removeItem('dev_usage');
+            addResult('Local usage data cleared!', 'success');
+            checkLocalUsage();
+        }
+        
+        function simulateUsage(tool) {
+            const localUsage = localStorage.getItem('dev_usage');
+            const usage = localUsage ? JSON.parse(localUsage) : { count: 0, date: getTodayDateString() };
+            
+            // Reset if new day
+            if (usage.date !== getTodayDateString()) {
+                usage.count = 0;
+                usage.date = getTodayDateString();
+            }
+            
+            const limit = 5;
+            if (usage.count >= limit) {
+                addResult(`${tool.toUpperCase()}: Daily limit of ${limit} uses reached!`, 'error');
+                return;
+            }
+            
+            // Increment usage
+            usage.count++;
+            localStorage.setItem('dev_usage', JSON.stringify(usage));
+            
+            addResult(`${tool.toUpperCase()}: Usage incremented. Now ${usage.count}/${limit}`, 'success');
+            checkLocalUsage();
+        }
+        
+        function addResult(text, type = '') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `section ${type}`;
+            resultDiv.textContent = text;
+            resultsDiv.insertBefore(resultDiv, resultsDiv.firstChild);
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLocalUsage();
+            addResult('Development mode active. Using localStorage for usage tracking.', 'status');
+        });
+    </script>
+</body>
+</html>
