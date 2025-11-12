@@ -50,7 +50,12 @@ const App: React.FC = () => {
   return (
     <UserProvider>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white font-sans flex flex-col">
-        <Header activeTool={activeTool} setActiveTool={setActiveTool} openUpgradeModal={() => setIsUpgradeModalOpen(true)} />
+        <Header 
+          activeTool={activeTool} 
+          setActiveTool={setActiveTool} 
+          openUpgradeModal={() => setIsUpgradeModalOpen(true)}
+          openSignupModal={() => setIsSignupModalOpen(true)}
+        />
         
         <main className="flex-grow px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-8">
           <div className="max-w-6xl mx-auto">

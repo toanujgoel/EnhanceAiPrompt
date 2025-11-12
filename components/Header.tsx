@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Tool, UserPlan } from '../types';
-import { useUser } from '../hooks/useUser';
+import { useUser } from '../hooks/useUser.tsx';
 import { USAGE_LIMITS } from '../constants';
-import { BoltIcon, EnhanceAiLogo, MicrophoneIcon, NewspaperIcon, PhotoIcon, SparklesIcon, SpeakerWaveIcon, InformationCircleIcon, EnvelopeIcon, ShieldCheckIcon, DocumentTextIcon, ChevronDownIcon } from './icons/Icons';
+import { BoltIcon, EnhanceAiLogo, MicrophoneIcon, NewspaperIcon, PhotoIcon, SparklesIcon, SpeakerWaveIcon, InformationCircleIcon, EnvelopeIcon, ShieldCheckIcon, DocumentTextIcon, ChevronDownIcon, UserCircleIcon, ArrowRightOnRectangleIcon } from './icons/Icons';
+import LoginModal from './LoginModal';
 
 interface HeaderProps {
   activeTool: Tool;
   setActiveTool: (tool: Tool) => void;
   openUpgradeModal: () => void;
+  openSignupModal: () => void;
 }
 
 const toolIcons: Record<Tool, React.ReactNode> = {
@@ -26,11 +28,14 @@ const MAIN_TOOLS = [Tool.ENHANCER, Tool.HUMANIZER, Tool.IMAGE_GENERATOR, Tool.TT
 const MORE_PAGES = [Tool.ABOUT, Tool.CONTACT, Tool.PRIVACY, Tool.TERMS];
 
 
-const Header: React.FC<HeaderProps> = ({ activeTool, setActiveTool, openUpgradeModal }) => {
-  const { user, getRemainingUses } = useUser();
+const Header: React.FC<HeaderProps> = ({ activeTool, setActiveTool, openUpgradeModal, openSignupModal }) => {
+  const { user, isAuthenticated, logoutUser, getRemainingUses } = useUser();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const remainingUses = getRemainingUses();
   const usageLimit = USAGE_LIMITS[user.plan];
 
@@ -38,6 +43,9 @@ const Header: React.FC<HeaderProps> = ({ activeTool, setActiveTool, openUpgradeM
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMoreMenuOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -51,6 +59,11 @@ const Header: React.FC<HeaderProps> = ({ activeTool, setActiveTool, openUpgradeM
     setIsMoreMenuOpen(false);
     setIsMobileMoreOpen(false);
   }
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setIsUserMenuOpen(false);
+  };
 
   return (
     <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50 transition-all duration-300 shadow-sm">
@@ -103,21 +116,74 @@ const Header: React.FC<HeaderProps> = ({ activeTool, setActiveTool, openUpgradeM
                 )}
             </div>
           </nav>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Usage Badge */}
             <div className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100/60 dark:bg-gray-800/60 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
               <span>{usageLimit - remainingUses}</span>
               <span className="text-gray-500 dark:text-gray-400 mx-1">/</span>
               <span>{usageLimit}</span>
               <span className="hidden sm:inline ml-1 text-gray-500 dark:text-gray-400">uses</span>
             </div>
-            {user.plan === UserPlan.FREE && (
-              <button 
-                onClick={openUpgradeModal} 
-                className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 transform hover:scale-105 active:scale-95 transition-all duration-200"
-              >
-                <span className="hidden sm:inline">Upgrade</span>
-                <span className="sm:hidden">Pro</span>
-              </button>
+
+            {/* Authenticated User Menu */}
+            {isAuthenticated ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/60"
+                >
+                  <UserCircleIcon className="w-5 h-5" />
+                  <span className="hidden md:inline max-w-[120px] truncate">{user.email}</span>
+                  <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 py-2 z-10">
+                    <div className="px-4 py-2 border-b border-gray-200/50 dark:border-gray-700/50">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Signed in as</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user.email}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 capitalize">{user.plan} Plan</p>
+                    </div>
+
+                    {user.plan !== UserPlan.PREMIUM && (
+                      <button
+                        onClick={() => {
+                          openUpgradeModal();
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-gray-100/60 dark:hover:bg-gray-700/40 transition-colors duration-150"
+                      >
+                        ⭐ Upgrade to Premium
+                      </button>
+                    )}
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100/60 dark:hover:bg-gray-700/40 transition-colors duration-150"
+                    >
+                      <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Anonymous User Buttons */
+              <>
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="text-gray-700 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800/60 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200"
+                >
+                  Log In
+                </button>
+                <button 
+                  onClick={openSignupModal} 
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 transform hover:scale-105 active:scale-95 transition-all duration-200"
+                >
+                  <span className="hidden sm:inline">Sign Up Free</span>
+                  <span className="sm:hidden">Sign Up</span>
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -169,6 +235,9 @@ const Header: React.FC<HeaderProps> = ({ activeTool, setActiveTool, openUpgradeM
           )}
         </div>
       </div>
+
+      {/* Login Modal */}
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </header>
   );
 };
